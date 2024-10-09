@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Streaming Success Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .chart {
+            margin: 50px auto;
+            width: 600px;
+            height: 400px;
+        }
+        .axis-label {
+            font-size: 12px;
+        }
+        .title {
+            text-align: center;
+            margin: 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="title">Relationship between Musical Features and Spotify Streams</h1>
+
+    <div id="danceability-chart" class="chart"></div>
+    <div id="valence-chart" class="chart"></div>
+    <div id="energy-chart" class="chart"></div>
+    <div id="acousticness-chart" class="chart"></div>
+    <div id="instrumentalness-chart" class="chart"></div>
+    <div id="liveness-chart" class="chart"></div>
+    <div id="speechiness-chart" class="chart"></div>
+
+    <script>
+        // Load CSV file using d3.csv
+        d3.csv("Spotify Most Streamed Songs.csv").then(function(data) {
+            // Convert relevant fields from strings to numbers
+            data.forEach(function(d) {
+                d.streams = +d["streams(10 million)"] * 10;  // Convert to actual number of streams
+                d.danceability = +d["danceability_%"];
+                d.valence = +d["valence_%"];
+                d.energy = +d["energy_%"];
+                d.acousticness = +d["acousticness_%"];
+                d.instrumentalness = +d["instrumentalness_%"];
+                d.liveness = +d["liveness_%"];
+                d.speechiness = +d["speechiness_%"];
+            });
+
+            // Create separate charts for each attribute
+            createChart(data, "danceability", "#danceability-chart", "Danceability (%)");
+            createChart(data, "valence", "#valence-chart", "Valence (%)");
+            createChart(data, "energy", "#energy-chart", "Energy (%)");
+            createChart(data, "acousticness", "#acousticness-chart", "Acousticness (%)");
+            createChart(data, "instrumentalness", "#instrumentalness-chart", "Instrumentalness (%)");
+            createChart(data, "liveness", "#liveness-chart", "Liveness (%)");
+            createChart(data, "speechiness", "#speechiness-chart", "Speechiness (%)");
+        });
+
+        function createChart(data, attribute, chartId, yLabel) {
+            const width = 600, height = 400, margin = { top: 20, right: 30, bottom: 50, left: 70 };
+
+            const svg = d3.select(chartId)
+                          .append("svg")
+                          .attr("width", width)
+                          .attr("height", height);
+
+            const xScale = d3.scaleLinear()
+                             .domain(d3.extent(data, d => d.streams))
+                             .range([margin.left, width - margin.right]);
+
+            const yScale = d3.scaleLinear()
+                             .domain([0, d3.max(data, d => d[attribute])])
+                             .nice()
+                             .range([height - margin.bottom, margin.top]);
+
+            // Axes
+            const xAxis = d3.axisBottom(xScale).ticks(10);
+            const yAxis = d3.axisLeft(yScale);
+
+            svg.append("g")
+               .attr("transform", `translate(0,${height - margin.bottom})`)
+               .call(xAxis)
+               .append("text")
+               .attr("x", width / 2)
+               .attr("y", 35)
+               .attr("fill", "black")
+               .style("font-size", "12px")
+               .style("text-anchor", "middle")
+               .text("Streams Count");
+
+            svg.append("g")
+               .attr("transform", `translate(${margin.left},0)`)
+               .call(yAxis)
+               .append("text")
+               .attr("transform", "rotate(-90)")
+               .attr("x", -height / 2)
+               .attr("y", -50)
+               .attr("fill", "black")
+               .style("font-size", "12px")
+               .style("text-anchor", "middle")
+               .text(yLabel);
+
+            // Scatter plot
+            svg.selectAll(".dot")
+               .data(data)
+               .enter().append("circle")
+               .attr("class", "dot")
+               .attr("cx", d => xScale(d.streams))
+               .attr("cy", d => yScale(d[attribute]))
+               .attr("r", 4)
+               .style("fill", "steelblue")
+               .style("opacity", 0.7);
+        }
+    </script>
+</body>
+</html>
